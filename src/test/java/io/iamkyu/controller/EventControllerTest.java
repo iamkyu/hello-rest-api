@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.iamkyu.domain.Event;
 import io.iamkyu.domain.EventStatus;
 import io.iamkyu.dto.EventCreateRequest;
 import org.junit.Test;
@@ -36,7 +37,7 @@ public class EventControllerTest {
     private ObjectMapper mapper;
 
     @Test
-    public void createEvent() throws Exception {
+    public void createEvent_200() throws Exception {
         //given
         EventCreateRequest request = EventCreateRequest.builder()
                 .name("New Event")
@@ -61,6 +62,20 @@ public class EventControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("id").exists())
                 .andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT.name()));
+    }
+
+    @Test
+    public void createEvent_알수없는_파라미터_400() throws Exception {
+        //given
+        Event request = Event.builder()
+                .id(100)
+                .build();
+
+        //when then
+        mockMvc.perform(post("/api/events")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(mapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 
     private LocalDateTime december(int date) {
