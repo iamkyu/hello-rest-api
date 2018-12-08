@@ -10,7 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.iamkyu.domain.Event;
+import io.iamkyu.domain.EventStatus;
+import io.iamkyu.dto.EventCreateRequest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +38,8 @@ public class EventControllerTest {
     @Test
     public void createEvent() throws Exception {
         //given
-        Event event = Event.builder()
+        EventCreateRequest request = EventCreateRequest.builder()
+                .name("New Event")
                 .beginEnrollmentDateTime(december(1))
                 .closeEnrollmentDateTime(december(10))
                 .beginEventDateTime(december(24))
@@ -52,12 +54,13 @@ public class EventControllerTest {
         mockMvc.perform(post("/api/events")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .accept(MediaTypes.HAL_JSON)
-                .content(mapper.writeValueAsString(event)))
+                .content(mapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(header().string(CONTENT_TYPE, HAL_JSON_UTF8_VALUE))
                 .andExpect(header().exists(LOCATION))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("id").exists());
+                .andExpect(jsonPath("id").exists())
+                .andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT.name()));
     }
 
     private LocalDateTime december(int date) {

@@ -4,6 +4,8 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 import io.iamkyu.domain.Event;
 import io.iamkyu.domain.EventRepository;
+import io.iamkyu.dto.EventCreateRequest;
+import org.modelmapper.ModelMapper;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -18,18 +20,20 @@ import java.net.URI;
 public class EventController {
 
     private final EventRepository eventRepository;
+    private final ModelMapper modelMapper;
 
-    public EventController(EventRepository eventRepository) {
+    public EventController(EventRepository eventRepository, ModelMapper modelMapper) {
         this.eventRepository = eventRepository;
+        this.modelMapper = modelMapper;
     }
 
     @PostMapping
-    public ResponseEntity createEvent(@RequestBody Event event) {
-        Event savedEvent = eventRepository.save(event);
+    public ResponseEntity<Event> createEvent(@RequestBody EventCreateRequest createRequest) {
+        Event savedEvent = eventRepository.save(modelMapper.map(createRequest, Event.class));
         URI uri = linkTo(EventController.class)
                 .slash(savedEvent.getId())
                 .toUri();
 
-        return ResponseEntity.created(uri).body(event);
+        return ResponseEntity.created(uri).body(savedEvent);
     }
 }
