@@ -97,4 +97,9 @@ public class Event {
     public void setEventStatus(EventStatus eventStatus) {
         this.eventStatus = eventStatus;
     }
+
+    public void adjust() {
+        setFree(getBasePrice() == 0 && getMaxPrice() == 0);
+        setOffline(location != null && !location.isEmpty());
+    }
 }
