@@ -3,8 +3,18 @@ package io.iamkyu.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+import io.iamkyu.common.TestDescription;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+import java.util.List;
+
+@RunWith(JUnitParamsRunner.class)
 public class EventTest {
 
     @Test
@@ -30,31 +40,69 @@ public class EventTest {
     }
 
     @Test
-    public void 최소_최대_가격이_0_이면_무료이벤트() {
+    @Parameters
+    @TestDescription("최소, 최대 가격이 0이면 무료이벤트이여야 한다")
+    public void testFree(TestFreeParameter param) {
         //given
         Event event = Event.builder()
-                .basePrice(0)
-                .maxPrice(0)
+                .basePrice(param.getBasePrice())
+                .maxPrice(param.getMaxPrice())
                 .build();
 
         //when
         event.adjust();
 
         //then
-        assertThat(event.isFree()).isTrue();
+        assertThat(event.isFree()).isEqualTo(param.isExpectedIsFree());
+    }
+
+    @SuppressWarnings("unused")
+    private List<TestFreeParameter> parametersForTestFree() {
+        return Arrays.asList(
+                new TestFreeParameter(0, 0, true),
+                new TestFreeParameter(100, 0, false),
+                new TestFreeParameter(0, 100, false),
+                new TestFreeParameter(100, 200, false)
+        );
     }
 
     @Test
-    public void 장소가_있으면_오프라인() {
+    @Parameters
+    @TestDescription("장소가 명시되면 오프라인이벤트이여야 한다")
+    public void testOffline(TestOfflineParameter param) {
         //given
         Event event = Event.builder()
-                .location("서울특별시")
+                .location(param.getLocation())
                 .build();
 
         //when
         event.adjust();
 
         //then
-        assertThat(event.isOffline()).isTrue();
+        assertThat(event.isOffline()).isEqualTo(param.isExpectedIsOffline());
+    }
+
+    @SuppressWarnings("unused")
+    private List<TestOfflineParameter> parametersForTestOffline() {
+        return Arrays.asList(
+                new TestOfflineParameter("강남", true),
+                new TestOfflineParameter(null, false),
+                new TestOfflineParameter("      ", false)
+        );
+    }
+
+    @Data
+    @AllArgsConstructor
+    private static class TestFreeParameter {
+        private int basePrice;
+        private int maxPrice;
+        private boolean expectedIsFree;
+    }
+
+    @Data
+    @AllArgsConstructor
+    private static class TestOfflineParameter {
+        private String location;
+        private boolean expectedIsOffline;
     }
 }

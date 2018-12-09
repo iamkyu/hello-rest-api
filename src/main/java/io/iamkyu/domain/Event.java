@@ -100,6 +100,6 @@ public class Event {
 
     public void adjust() {
         setFree(getBasePrice() == 0 && getMaxPrice() == 0);
-        setOffline(location != null && !location.isEmpty());
+        setOffline(location != null && !location.trim().isEmpty());
     }
 }
