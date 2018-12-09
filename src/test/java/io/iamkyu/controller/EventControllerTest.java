@@ -10,10 +10,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.iamkyu.app.EventCreateRequest;
 import io.iamkyu.common.TestDescription;
 import io.iamkyu.domain.Event;
 import io.iamkyu.domain.EventStatus;
-import io.iamkyu.app.EventCreateRequest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,13 +60,22 @@ public class EventControllerTest {
                 .accept(MediaTypes.HAL_JSON)
                 .content(mapper.writeValueAsString(request)))
                 .andDo(print())
+
+                // validate headers
                 .andExpect(status().isCreated())
                 .andExpect(header().string(CONTENT_TYPE, HAL_JSON_UTF8_VALUE))
                 .andExpect(header().exists(LOCATION))
+
+                // validate bodies
                 .andExpect(jsonPath("id").exists())
                 .andExpect(jsonPath("free").value(false))
                 .andExpect(jsonPath("offline").value(true))
-                .andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT.name()));
+                .andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT.name()))
+
+                // validate hateoas
+                .andExpect(jsonPath("_links.self").exists())
+                .andExpect(jsonPath("_links.query-events").exists())
+                .andExpect(jsonPath("_links.update-event").exists());
     }
 
     @Test

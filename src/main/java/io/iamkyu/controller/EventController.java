@@ -4,10 +4,12 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 import io.iamkyu.app.EventCreateRequest;
 import io.iamkyu.app.EventCreateRequestValidator;
+import io.iamkyu.app.EventResource;
 import io.iamkyu.domain.Event;
 import io.iamkyu.domain.EventRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
@@ -48,10 +50,13 @@ public class EventController {
         Event event = modelMapper.map(createRequest, Event.class);
         event.adjust();
         Event savedEvent = eventRepository.save(event);
-        URI uri = linkTo(EventController.class)
-                .slash(savedEvent.getId())
-                .toUri();
 
-        return ResponseEntity.created(uri).body(savedEvent);
+        ControllerLinkBuilder linkBuilder = linkTo(EventController.class).slash(savedEvent.getId());
+        URI uri = linkBuilder.toUri();
+        EventResource resource = new EventResource(event);
+        resource.add(linkTo(EventController.class).withRel("query-events"));
+        resource.add(linkBuilder.withRel("update-event"));
+
+        return ResponseEntity.created(uri).body(resource);
     }
 }
