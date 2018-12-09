@@ -6,8 +6,6 @@ import static org.assertj.core.api.Assertions.fail;
 import io.iamkyu.common.TestDescription;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -91,18 +89,45 @@ public class EventTest {
         );
     }
 
-    @Data
-    @AllArgsConstructor
     private static class TestFreeParameter {
         private int basePrice;
         private int maxPrice;
         private boolean expectedIsFree;
+
+        public TestFreeParameter(int basePrice, int maxPrice, boolean expectedIsFree) {
+            this.basePrice = basePrice;
+            this.maxPrice = maxPrice;
+            this.expectedIsFree = expectedIsFree;
+        }
+
+        public int getBasePrice() {
+            return basePrice;
+        }
+
+        public int getMaxPrice() {
+            return maxPrice;
+        }
+
+        public boolean isExpectedIsFree() {
+            return expectedIsFree;
+        }
     }
 
-    @Data
-    @AllArgsConstructor
     private static class TestOfflineParameter {
         private String location;
         private boolean expectedIsOffline;
+
+        public TestOfflineParameter(String location, boolean expectedIsOffline) {
+            this.location = location;
+            this.expectedIsOffline = expectedIsOffline;
+        }
+
+        public String getLocation() {
+            return location;
+        }
+
+        public boolean isExpectedIsOffline() {
+            return expectedIsOffline;
+        }
     }
 }
