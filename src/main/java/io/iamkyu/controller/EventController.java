@@ -1,13 +1,12 @@
 package io.iamkyu.controller;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
-
 import io.iamkyu.app.EventCreateRequest;
 import io.iamkyu.app.EventCreateRequestValidator;
 import io.iamkyu.app.EventResource;
 import io.iamkyu.domain.Event;
 import io.iamkyu.domain.EventRepository;
 import org.modelmapper.ModelMapper;
+import org.springframework.hateoas.Link;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.validation.Valid;
 import java.net.URI;
+
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 @Controller
 @RequestMapping(value = "/api/events", produces = MediaTypes.HAL_JSON_UTF8_VALUE)
@@ -51,11 +52,13 @@ public class EventController {
         event.adjust();
         Event savedEvent = eventRepository.save(event);
 
-        ControllerLinkBuilder linkBuilder = linkTo(EventController.class).slash(savedEvent.getId());
-        URI uri = linkBuilder.toUri();
+        ControllerLinkBuilder selfLinkBuilder = linkTo(EventController.class).slash(savedEvent.getId());
+        URI uri = selfLinkBuilder.toUri();
+
         EventResource resource = new EventResource(event);
+        resource.add(new Link("/docs/index.html#resources-events-create").withRel("profile"));
         resource.add(linkTo(EventController.class).withRel("query-events"));
-        resource.add(linkBuilder.withRel("update-event"));
+        resource.add(selfLinkBuilder.withRel("update-event"));
 
         return ResponseEntity.created(uri).body(resource);
     }
