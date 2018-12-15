@@ -1,5 +1,6 @@
 package io.iamkyu.controller;
 
+import io.iamkyu.app.ErrorsResource;
 import io.iamkyu.app.EventCreateRequest;
 import io.iamkyu.app.EventCreateRequestValidator;
 import io.iamkyu.app.EventResource;
@@ -40,12 +41,12 @@ public class EventController {
     public ResponseEntity createEvent(@RequestBody @Valid EventCreateRequest createRequest,
                                              Errors errors) {
         if (errors.hasErrors()) {
-            return ResponseEntity.badRequest().body(errors);
+            return badRequest(errors);
         }
 
         validator.validate(createRequest, errors);
         if (errors.hasErrors()) {
-            return ResponseEntity.badRequest().body(errors);
+            return badRequest(errors);
         }
 
         Event event = modelMapper.map(createRequest, Event.class);
@@ -61,5 +62,9 @@ public class EventController {
         resource.add(selfLinkBuilder.withRel("update-event"));
 
         return ResponseEntity.created(uri).body(resource);
+    }
+
+    private ResponseEntity badRequest(Errors errors) {
+        return ResponseEntity.badRequest().body(new ErrorsResource(errors));
     }
 }
