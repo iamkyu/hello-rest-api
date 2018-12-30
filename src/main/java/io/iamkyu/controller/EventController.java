@@ -4,6 +4,8 @@ import io.iamkyu.app.ErrorsResource;
 import io.iamkyu.app.EventCreateRequest;
 import io.iamkyu.app.EventCreateRequestValidator;
 import io.iamkyu.app.EventResource;
+import io.iamkyu.app.EventUpdateRequest;
+import io.iamkyu.app.EventUpdateRequestValidator;
 import io.iamkyu.domain.Event;
 import io.iamkyu.domain.EventRepository;
 import org.modelmapper.ModelMapper;
@@ -20,6 +22,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -35,13 +38,16 @@ public class EventController {
 
     private final EventRepository eventRepository;
     private final ModelMapper modelMapper;
-    private final EventCreateRequestValidator validator;
+    private final EventCreateRequestValidator createRequestValidator;
+    private final EventUpdateRequestValidator updateRequestValidator;
 
     public EventController(EventRepository eventRepository, ModelMapper modelMapper,
-                           EventCreateRequestValidator validator) {
+                           EventCreateRequestValidator createRequestValidator,
+                           EventUpdateRequestValidator updateRequestValidator) {
         this.eventRepository = eventRepository;
         this.modelMapper = modelMapper;
-        this.validator = validator;
+        this.createRequestValidator = createRequestValidator;
+        this.updateRequestValidator = updateRequestValidator;
     }
 
     @PostMapping
@@ -51,7 +57,7 @@ public class EventController {
             return badRequest(errors);
         }
 
-        validator.validate(createRequest, errors);
+        createRequestValidator.validate(createRequest, errors);
         if (errors.hasErrors()) {
             return badRequest(errors);
         }
@@ -87,6 +93,33 @@ public class EventController {
         }
         EventResource resource = new EventResource(optional.get());
         resource.add(new Link("/docs/index.html#resources-events-get").withRel("profile"));
+        return ResponseEntity.ok(resource);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity updateEvent(@PathVariable Integer id,
+                                      @RequestBody @Valid EventUpdateRequest updateRequest,
+                                      Errors errors) {
+        Optional<Event> optional = eventRepository.findById(id);
+        if (!optional.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (errors.hasErrors()) {
+            return badRequest(errors);
+        }
+
+        updateRequestValidator.validate(updateRequest, errors);
+        if (errors.hasErrors()) {
+            return badRequest(errors);
+        }
+
+        Event source = optional.get();
+        modelMapper.map(updateRequest, source);
+        eventRepository.save(source);
+
+        EventResource resource = new EventResource(source);
+        resource.add(new Link("/docs/index.html#resources-events-update").withRel("profile"));
         return ResponseEntity.ok(resource);
     }
 

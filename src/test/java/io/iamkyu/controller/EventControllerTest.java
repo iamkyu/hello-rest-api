@@ -1,12 +1,14 @@
 package io.iamkyu.controller;
 
 import io.iamkyu.app.EventCreateRequest;
+import io.iamkyu.app.EventUpdateRequest;
 import io.iamkyu.common.TestDescription;
 import io.iamkyu.domain.Event;
 import io.iamkyu.domain.EventRepository;
 import io.iamkyu.domain.EventStatus;
 import org.junit.After;
 import org.junit.Test;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
@@ -33,6 +35,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.paramete
 import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -42,6 +45,9 @@ public class EventControllerTest extends ControllerTest {
 
     @Autowired
     private EventRepository eventRepository;
+
+    @Autowired
+    private ModelMapper modelMapper;
 
     @After
     public void tearDown() {
@@ -273,12 +279,12 @@ public class EventControllerTest extends ControllerTest {
                                 fieldWithPath("_embedded.eventList[]").description("이벤트 리스트"),
                                 fieldWithPath("_embedded.eventList[].id").description("이벤트 아이디"),
                                 fieldWithPath("_embedded.eventList[].name").description("이벤트명"),
-                                // fieldWithPath("_embedded.eventList[].description").description("이벤트 설명"),
-                                // fieldWithPath("_embedded.eventList[].beginEnrollmentDateTime").description("이벤트 등록 시작일"),
-                                // fieldWithPath("_embedded.eventList[].closeEnrollmentDateTime").description("이벤트 등록 종료일"),
-                                // fieldWithPath("_embedded.eventList[].beginEventDateTime").description("이벤트 시작일"),
-                                // fieldWithPath("_embedded.eventList[].endEventDateTime").description("이벤트 종료일"),
-                                // fieldWithPath("_embedded.eventList[].location").description("이벤트 장소"),
+                                fieldWithPath("_embedded.eventList[].description").description("이벤트 설명"),
+                                fieldWithPath("_embedded.eventList[].beginEnrollmentDateTime").description("이벤트 등록 시작일"),
+                                fieldWithPath("_embedded.eventList[].closeEnrollmentDateTime").description("이벤트 등록 종료일"),
+                                fieldWithPath("_embedded.eventList[].beginEventDateTime").description("이벤트 시작일"),
+                                fieldWithPath("_embedded.eventList[].endEventDateTime").description("이벤트 종료일"),
+                                fieldWithPath("_embedded.eventList[].location").description("이벤트 장소"),
                                 fieldWithPath("_embedded.eventList[].basePrice").description("이벤트 가격"),
                                 fieldWithPath("_embedded.eventList[].maxPrice").description("이벤트 최대 가격"),
                                 fieldWithPath("_embedded.eventList[].limitOfEnrollment").description("이벤트 최대 등록 가능 수"),
@@ -330,12 +336,12 @@ public class EventControllerTest extends ControllerTest {
                         responseFields(
                                 fieldWithPath("id").description("이벤트 아이디"),
                                 fieldWithPath("name").description("이벤트명"),
-                                // fieldWithPath("description").description("이벤트 설명"),
-                                // fieldWithPath("beginEnrollmentDateTime").description("이벤트 등록 시작일"),
-                                // fieldWithPath("closeEnrollmentDateTime").description("이벤트 등록 종료일"),
-                                // fieldWithPath("beginEventDateTime").description("이벤트 시작일"),
-                                // fieldWithPath("endEventDateTime").description("이벤트 종료일"),
-                                // fieldWithPath("location").description("이벤트 장소"),
+                                fieldWithPath("description").description("이벤트 설명"),
+                                fieldWithPath("beginEnrollmentDateTime").description("이벤트 등록 시작일"),
+                                fieldWithPath("closeEnrollmentDateTime").description("이벤트 등록 종료일"),
+                                fieldWithPath("beginEventDateTime").description("이벤트 시작일"),
+                                fieldWithPath("endEventDateTime").description("이벤트 종료일"),
+                                fieldWithPath("location").description("이벤트 장소"),
                                 fieldWithPath("basePrice").description("이벤트 가격"),
                                 fieldWithPath("maxPrice").description("이벤트 최대 가격"),
                                 fieldWithPath("limitOfEnrollment").description("이벤트 최대 등록 가능 수"),
@@ -359,9 +365,121 @@ public class EventControllerTest extends ControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    @TestDescription("이벤트 수정")
+    public void updateEvent_200() throws Exception {
+        //given
+        String updatedEventName = "Updated Name";
+
+        Event event = generateEvent(1);
+        EventUpdateRequest updateRequest = modelMapper.map(event, EventUpdateRequest.class);
+        updateRequest.setName(updatedEventName);
+
+        //when then
+        mockMvc.perform(put("/api/events/{id}", event.getId())
+                .content(mapper.writeValueAsString(updateRequest))
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .accept(MediaTypes.HAL_JSON))
+                .andDo(print())
+
+                .andExpect(status().isOk())
+                .andExpect(header().string(CONTENT_TYPE, HAL_JSON_UTF8_VALUE))
+
+                .andExpect(jsonPath("name").value(updatedEventName))
+
+                .andDo(document("update-event",
+                        links(
+                                linkWithRel("self").description("자신을 가르키는 링크"),
+                                linkWithRel("profile").description("프로필을 가르키는 링크")
+                        ),
+                        requestHeaders(
+                                headerWithName(ACCEPT).description(MediaType.APPLICATION_JSON_UTF8),
+                                headerWithName(CONTENT_TYPE).description(MediaTypes.HAL_JSON)
+                        ),
+                        responseHeaders(
+                                headerWithName(CONTENT_TYPE).description(HAL_JSON_UTF8_VALUE)
+                        ),
+                        responseFields(
+                                fieldWithPath("id").description("이벤트 아이디"),
+                                fieldWithPath("name").description("이벤트명"),
+                                fieldWithPath("description").description("이벤트 설명"),
+                                fieldWithPath("beginEnrollmentDateTime").description("이벤트 등록 시작일"),
+                                fieldWithPath("closeEnrollmentDateTime").description("이벤트 등록 종료일"),
+                                fieldWithPath("beginEventDateTime").description("이벤트 시작일"),
+                                fieldWithPath("endEventDateTime").description("이벤트 종료일"),
+                                fieldWithPath("location").description("이벤트 장소"),
+                                fieldWithPath("basePrice").description("이벤트 가격"),
+                                fieldWithPath("maxPrice").description("이벤트 최대 가격"),
+                                fieldWithPath("limitOfEnrollment").description("이벤트 최대 등록 가능 수"),
+                                fieldWithPath("offline").description("오프라인 이벤트 여부"),
+                                fieldWithPath("free").description("무료 이벤트 여부"),
+                                // fieldWithPath("eventStatus").description("이벤트 상태"),
+                                fieldWithPath("_links.self.href").description("자신을 가르키는 링크"),
+                                fieldWithPath("_links.profile.href").description("프로필을 가르키는 링크")
+                        )
+                ));
+    }
+
+    @Test
+    @TestDescription("존재하지 않는 이벤트 수정 시도")
+    public void updateNoExistEvent_404() throws Exception {
+        //given
+        int wrongId = Integer.MIN_VALUE;
+        Event event = generateEvent(1);
+        EventUpdateRequest updateRequest = modelMapper.map(event, EventUpdateRequest.class);
+
+        //when then
+        mockMvc.perform(put("/api/events/{id}", wrongId)
+                .content(mapper.writeValueAsString(updateRequest))
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @TestDescription("빈 정보로 이벤트 수정 시도")
+    public void emptyUpdateData_400() throws Exception {
+        //given
+        Event event = generateEvent(1);
+        EventUpdateRequest updateRequest = EventUpdateRequest.builder().build();
+
+        //when then
+        mockMvc.perform(put("/api/events/{id}", event)
+                .content(mapper.writeValueAsString(updateRequest))
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isBadRequest())
+                .andDo(print());
+    }
+
+    @Test
+    @TestDescription("유효하지 않은 정보로 이벤트 수정 시도")
+    public void wrongUpdateData_400() throws Exception {
+        //given
+        Event event = generateEvent(1);
+        event.setBasePrice(event.getMaxPrice() + 1_000);
+        EventUpdateRequest updateRequest = modelMapper.map(event, EventUpdateRequest.class);
+
+        //when then
+        mockMvc.perform(put("/api/events/{id}", event.getId())
+                .content(mapper.writeValueAsString(updateRequest))
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
     private Event generateEvent(int id) {
         Event event = Event.builder()
                 .name("Event" + id)
+                .description("Foo bar")
+                .beginEnrollmentDateTime(december(1))
+                .closeEnrollmentDateTime(december(10))
+                .beginEventDateTime(december(24))
+                .endEventDateTime(december(25))
+                .basePrice(10000)
+                .maxPrice(50000)
+                .limitOfEnrollment(100)
+                .location("서울특별시")
                 .build();
         return eventRepository.save(event);
     }
