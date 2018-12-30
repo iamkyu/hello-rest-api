@@ -302,12 +302,75 @@ public class EventControllerTest extends ControllerTest {
                 ));
     }
 
-    private void generateEventsCountOf(int expectedCount) {
-        List<Event> events = IntStream.range(0, expectedCount)
-                .mapToObj(index -> Event.builder().name("Event" + index).build())
-                .collect(toList());
+    @Test
+    @TestDescription("단일 이벤트 조회")
+    public void queryEvent_200() throws Exception {
+        Event event = generateEvent(1);
 
-        eventRepository.saveAll(events);
+        mockMvc.perform(get("/api/events/{id}", event.getId())
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .accept(MediaTypes.HAL_JSON))
+                .andDo(print())
+
+                .andExpect(status().isOk())
+                .andExpect(header().string(CONTENT_TYPE, HAL_JSON_UTF8_VALUE))
+
+                .andDo(document("get-event",
+                        links(
+                                linkWithRel("self").description("자신을 가르키는 링크"),
+                                linkWithRel("profile").description("프로필을 가르키는 링크")
+                        ),
+                        requestHeaders(
+                                headerWithName(ACCEPT).description(MediaType.APPLICATION_JSON_UTF8),
+                                headerWithName(CONTENT_TYPE).description(MediaTypes.HAL_JSON)
+                        ),
+                        responseHeaders(
+                                headerWithName(CONTENT_TYPE).description(HAL_JSON_UTF8_VALUE)
+                        ),
+                        responseFields(
+                                fieldWithPath("id").description("이벤트 아이디"),
+                                fieldWithPath("name").description("이벤트명"),
+                                // fieldWithPath("description").description("이벤트 설명"),
+                                // fieldWithPath("beginEnrollmentDateTime").description("이벤트 등록 시작일"),
+                                // fieldWithPath("closeEnrollmentDateTime").description("이벤트 등록 종료일"),
+                                // fieldWithPath("beginEventDateTime").description("이벤트 시작일"),
+                                // fieldWithPath("endEventDateTime").description("이벤트 종료일"),
+                                // fieldWithPath("location").description("이벤트 장소"),
+                                fieldWithPath("basePrice").description("이벤트 가격"),
+                                fieldWithPath("maxPrice").description("이벤트 최대 가격"),
+                                fieldWithPath("limitOfEnrollment").description("이벤트 최대 등록 가능 수"),
+                                fieldWithPath("offline").description("오프라인 이벤트 여부"),
+                                fieldWithPath("free").description("무료 이벤트 여부"),
+                                // fieldWithPath("eventStatus").description("이벤트 상태"),
+                                fieldWithPath("_links.self.href").description("자신을 가르키는 링크"),
+                                fieldWithPath("_links.profile.href").description("프로필을 가르키는 링크")
+                        )
+                ));
+    }
+
+    @Test
+    @TestDescription("존재하지 않는 이벤트 조회")
+    public void queryNotExistEvent_404() throws Exception {
+        int wrongId = Integer.MIN_VALUE;
+
+        mockMvc.perform(get("/api/events/{id}", wrongId)
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    private Event generateEvent(int id) {
+        Event event = Event.builder()
+                .name("Event" + id)
+                .build();
+        return eventRepository.save(event);
+    }
+
+    private List<Event> generateEventsCountOf(int expectedCount) {
+        List<Event> events = IntStream.range(0, expectedCount)
+                .mapToObj(this::generateEvent)
+                .collect(toList());
+        return eventRepository.saveAll(events);
     }
 
     private LocalDateTime december(int date) {
